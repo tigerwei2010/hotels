@@ -37,10 +37,12 @@ for hotelId, hotel in us_hotel_dict.items():
     lat, lon = get_latlon(hotel)
     resolution = 4
     cell_id = h3.latlng_to_cell(lat, lon, resolution) 
-    if cell_id not in geoIndex:
-         geoIndex[cell_id] = [hotelId]
-    else:
-        geoIndex[cell_id].append(hotelId)
+    neighborhood_cell_ids = h3.grid_disk(cell_id)
+    for neighborhood_cell_id in neighborhood_cell_ids:
+        if neighborhood_cell_id not in geoIndex:
+            geoIndex[neighborhood_cell_id] = [hotelId]
+        else:
+            geoIndex[neighborhood_cell_id].append(hotelId)
 
 
 # load us cities
@@ -82,11 +84,7 @@ def get_hotels_by_city_name(city_name: str):
 def get_hotels_by_coordinate(lat: float, lon: float):
     resolution = 4
     cell_id = h3.latlng_to_cell(lat, lon, resolution)
-    neighbor_cell_ids = h3.grid_disk(cell_id)
-    hotel_ids = []
-    for neighbor_cell_id in neighbor_cell_ids:
-        in_cell_hotel_ids = geoIndex.get(neighbor_cell_id, [])
-        hotel_ids.extend(in_cell_hotel_ids)
+    hotel_ids = geoIndex.get(cell_id, [])
     
     retrieved_hotels = [us_hotel_dict[hotel_id] for hotel_id in hotel_ids]
     filtered_hotels = []
