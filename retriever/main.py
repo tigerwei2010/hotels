@@ -3,19 +3,43 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import HOTELS_PQ_FILE
 from .data_loader import DataLoader
 from operator import attrgetter
+import h3
 
 
 dataLoader = DataLoader()
-hotels = dataLoader.load(HOTELS_PQ_FILE, country="United States")
+us_hotel_dict = dataLoader.load(HOTELS_PQ_FILE, country="United States")
 
 # build city index
 cityIndex = {}
-for hotelId, hotel in hotels.items():
+for hotelId, hotel in us_hotel_dict.items():
     cityName = hotel.cityName.lower()
     if cityName not in cityIndex:
          cityIndex[cityName] = [hotelId]
     else:
         cityIndex[cityName].append(hotelId)
+
+
+def get_latlon(hotel):
+    latlong = hotel.latlong
+    if not latlong:
+        return (None, None)
+    lat, lon = latlong.split('|')
+    return float(lat), float(lon)
+
+
+# build geo index
+geoIndex = {}  # cell_id to a list of hotel_id 
+for hotelId, hotel in us_hotel_dict.items():
+    latlong = hotel.latlong
+    if not latlong:
+        continue
+    lat, lon = get_latlon(hotel)
+    resolution = 4
+    cell_id = h3.latlng_to_cell(lat, lon, resolution) 
+    if cell_id not in geoIndex:
+         geoIndex[cell_id] = [hotelId]
+    else:
+        geoIndex[cell_id].append(hotelId)
 
 
 app = FastAPI()
@@ -43,9 +67,34 @@ def get_hotels_by_city_name(city_name: str):
         return {"error": "City not found", "city_name": city_name}
     
     hotel_ids = cityIndex[city_name_lower]
-    retrieved_hotels = [hotels[hotel_id] for hotel_id in hotel_ids]
+    retrieved_hotels = [us_hotel_dict[hotel_id] for hotel_id in hotel_ids]
     retrieved_hotels.sort(key=attrgetter('starScore'), reverse=True)
 
     trimmed_hotels = retrieved_hotels[:5]    
+    
+    return trimmed_hotels
+
+@app.get("/hotels_by_coordinate")
+def get_hotels_by_coordinate(lat: float, lon: float):
+    resolution = 4
+    cell_id = h3.latlng_to_cell(lat, lon, resolution)
+    neighbor_cell_ids = h3.grid_disk(cell_id)
+    hotel_ids = []
+    for neighbor_cell_id in neighbor_cell_ids:
+        in_cell_hotel_ids = geoIndex.get(neighbor_cell_id, [])
+        hotel_ids.extend(in_cell_hotel_ids)
+    
+    retrieved_hotels = [us_hotel_dict[hotel_id] for hotel_id in hotel_ids]
+    filtered_hotels = []
+    latlon1 = (lat, lon)
+    for hotel in retrieved_hotels:
+        latlon2 = get_latlon(hotel)
+        distance = h3.great_circle_distance(latlon1, latlon2, unit='km')
+        if distance <= 25.0:
+            hotel.score = distance
+            filtered_hotels.append(hotel)
+
+    filtered_hotels.sort(key=attrgetter('score'))
+    trimmed_hotels = filtered_hotels[:5]    
     
     return trimmed_hotels
