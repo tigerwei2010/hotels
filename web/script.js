@@ -11,7 +11,7 @@ document.getElementById('searchForm').addEventListener('submit', async function(
     hideResults();
     
     try {
-        const response = await fetch(`${API_BASE_URL}/hotels_by_city_name?city_name=${encodeURIComponent(cityName)}`);
+        const response = await fetch(`${API_BASE_URL}/hotels_nearby?city_name=${encodeURIComponent(cityName)}`);
         const data = await response.json();
         
         hideLoading();
@@ -55,7 +55,7 @@ function showResults(hotels, cityName) {
         hotelListDiv.innerHTML = hotels.map(hotel => `
             <div class="hotel-card">
                 <h3>${hotel.hotelName}</h3>
-                <p class="rating">Rating: ${hotel.stars || 'N/A'} stars</p>
+                <p class="rating">Rating: ${hotel.stars || 'N/A'}</p>
                 <p class="address">${hotel.address || 'Address not available'}</p>
                 <p class="description">${hotel.description || 'No description available'}</p>
                 ${hotel.phoneNumber ? `<p class="phone">Phone: ${hotel.phoneNumber}</p>` : ''}
