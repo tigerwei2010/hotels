@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .config import HOTELS_PQ_FILE
+from .config import HOTELS_PQ_FILE, CITIES_CSV_FILE
 from .data_loader import DataLoader
 from operator import attrgetter
 import h3
+
 
 
 dataLoader = DataLoader()
@@ -41,6 +42,9 @@ for hotelId, hotel in us_hotel_dict.items():
     else:
         geoIndex[cell_id].append(hotelId)
 
+
+# load us cities
+us_cities_dict = dataLoader.load_cites(CITIES_CSV_FILE)
 
 app = FastAPI()
 
@@ -98,3 +102,11 @@ def get_hotels_by_coordinate(lat: float, lon: float):
     trimmed_hotels = filtered_hotels[:5]    
     
     return trimmed_hotels
+
+@app.get("/hotels_nearby")
+def get_hotels_nearby(city_name: str):
+    city_name_lower = city_name.lower()
+    city = us_cities_dict.get(city_name_lower, None)
+    hotels = get_hotels_by_coordinate(city.lat, city.lng)
+
+    return hotels

@@ -3,3 +3,5 @@ pyarrow
 fastparquet
 fastapi
 uvicorn
+kagglehub
+h3
