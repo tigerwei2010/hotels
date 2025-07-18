@@ -11,7 +11,10 @@
         <h1>Hotel Search</h1>
         <form id="searchForm">
             <div class="search-box">
-                <input type="text" id="cityInput" placeholder="Enter city name (e.g., Seattle, WA)" required>
+                <div class="autocomplete-container">
+                    <input type="text" id="cityInput" placeholder="Enter city name (e.g., Seattle, WA)" required autocomplete="off">
+                    <div id="suggestions" class="suggestions-dropdown hidden"></div>
+                </div>
                 <button type="submit">Search</button>
             </div>
         </form>

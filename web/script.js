@@ -1,5 +1,70 @@
 const API_BASE_URL = 'http://localhost:8000';
 
+let debounceTimer;
+const cityInput = document.getElementById('cityInput');
+const suggestionsDiv = document.getElementById('suggestions');
+
+// Autocomplete functionality
+cityInput.addEventListener('input', function() {
+    const query = this.value.trim();
+    
+    clearTimeout(debounceTimer);
+    
+    if (query.length < 1) {
+        hideSuggestions();
+        return;
+    }
+    
+    debounceTimer = setTimeout(() => {
+        fetchSuggestions(query);
+    }, 50);
+});
+
+// Hide suggestions when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.autocomplete-container')) {
+        hideSuggestions();
+    }
+});
+
+async function fetchSuggestions(prefix) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auto_complete?prefix=${encodeURIComponent(prefix)}`);
+        const suggestions = await response.json();
+        
+        if (Array.isArray(suggestions) && suggestions.length > 0) {
+            showSuggestions(suggestions);
+        } else {
+            hideSuggestions();
+        }
+    } catch (error) {
+        console.error('Failed to fetch suggestions:', error);
+        hideSuggestions();
+    }
+}
+
+function showSuggestions(suggestions) {
+    suggestionsDiv.innerHTML = suggestions.map(city => 
+        `<div class="suggestion-item" data-city="${city}">${city}</div>`
+    ).join('');
+    
+    // Add click handlers for suggestions
+    suggestionsDiv.querySelectorAll('.suggestion-item').forEach(item => {
+        item.addEventListener('click', function() {
+            cityInput.value = this.dataset.city;
+            hideSuggestions();
+            // Trigger search automatically
+            document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+        });
+    });
+    
+    suggestionsDiv.classList.remove('hidden');
+}
+
+function hideSuggestions() {
+    suggestionsDiv.classList.add('hidden');
+}
+
 document.getElementById('searchForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
