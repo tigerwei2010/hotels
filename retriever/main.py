@@ -61,6 +61,8 @@ for city in us_cities:
             cityNameIndex[prefix].append(city.name)
 
 
+PAGE_SIZE = 5
+hotels_cache = {}
 
 app = FastAPI()
 
@@ -90,7 +92,7 @@ def get_hotels_by_city_name(city_name: str):
     retrieved_hotels = [us_hotel_dict[hotel_id] for hotel_id in hotel_ids]
     retrieved_hotels.sort(key=attrgetter('starScore'), reverse=True)
 
-    trimmed_hotels = retrieved_hotels[:5]    
+    trimmed_hotels = retrieved_hotels[:PAGE_SIZE]    
     
     return trimmed_hotels
 
@@ -111,17 +113,28 @@ def get_hotels_by_coordinate(lat: float, lon: float):
             filtered_hotels.append(hotel)
 
     filtered_hotels.sort(key=attrgetter('score'))
-    trimmed_hotels = filtered_hotels[:5]    
-    
-    return trimmed_hotels
+    return filtered_hotels
+
 
 @app.get("/hotels_nearby")
-def get_hotels_nearby(city_name: str):
+def get_hotels_nearby(city_name: str, page: int):
+    # look up cache, return result if hit
+    if city_name in hotels_cache:
+        hotels = hotels_cache[city_name]
+        start = (page - 1) * PAGE_SIZE
+        end = page * PAGE_SIZE
+        return hotels[start:end]
+
+    # cache miss, perform search
     city_name_lower = city_name.lower()
     city = us_cities_dict.get(city_name_lower, None)
     hotels = get_hotels_by_coordinate(city.lat, city.lng)
 
-    return hotels
+    # save to cache
+    hotels_cache[city_name] = hotels
+
+    return hotels[:PAGE_SIZE]
+
 
 @app.get("/auto_complete")
 def get_city_names(prefix: str):

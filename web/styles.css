@@ -173,3 +173,65 @@ button:hover {
 .website-link:hover {
     background-color: #2980b9;
 }
+
+/* Pagination styles - Google-like */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin: 30px 0;
+    padding: 20px 0;
+}
+
+.page-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    background-color: transparent;
+    color: #1a73e8;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.page-btn:hover {
+    background-color: #f8f9fa;
+    color: #1a73e8;
+}
+
+.page-btn.current-page {
+    background-color: #1a73e8;
+    color: white;
+    font-weight: 500;
+    cursor: default;
+}
+
+.page-btn.current-page:hover {
+    background-color: #1a73e8;
+    color: white;
+}
+
+.page-btn.prev-btn,
+.page-btn.next-btn {
+    padding: 0 16px;
+    font-weight: 500;
+}
+
+.page-btn:disabled {
+    color: #dadce0;
+    cursor: default;
+    background-color: transparent;
+}
+
+.page-btn:disabled:hover {
+    background-color: transparent;
+    color: #dadce0;
+}
