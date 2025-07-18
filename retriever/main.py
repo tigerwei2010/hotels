@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import HOTELS_PQ_FILE, CITIES_CSV_FILE
 from .data_loader import DataLoader
 from operator import attrgetter
+from collections import defaultdict
 import h3
 
 
@@ -47,6 +48,19 @@ for hotelId, hotel in us_hotel_dict.items():
 
 # load us cities
 us_cities_dict = dataLoader.load_cites(CITIES_CSV_FILE)
+
+# build prefix index for auto complete
+cityNameIndex = defaultdict(list)
+us_cities = list(us_cities_dict.values())
+us_cities.sort(key=attrgetter('population'), reverse=True)
+for city in us_cities:
+    name = city.name.lower()
+    for length in range(1, len(name)):
+        prefix = name[:length]
+        if len(cityNameIndex[prefix]) <= 10:
+            cityNameIndex[prefix].append(city.name)
+
+
 
 app = FastAPI()
 
@@ -108,3 +122,9 @@ def get_hotels_nearby(city_name: str):
     hotels = get_hotels_by_coordinate(city.lat, city.lng)
 
     return hotels
+
+@app.get("/auto_complete")
+def get_city_names(prefix: str):
+    prefix_lower = prefix.lower()
+    city_names = cityNameIndex.get(prefix_lower, []) 
+    return city_names

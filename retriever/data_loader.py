@@ -50,8 +50,8 @@ class DataLoader:
             if not city.lat or not city.lng:
                 continue
             # now we have a good city data
-            city_name = city.city_ascii + ', ' + city.state_id
-            city_name_lower = city_name.lower()
+            city.name = city.city_ascii + ', ' + city.state_id
+            city_name_lower = city.name.lower()
             cities[city_name_lower] = city
             
         return cities
